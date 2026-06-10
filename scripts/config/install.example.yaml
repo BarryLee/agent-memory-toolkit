@@ -1,0 +1,13 @@
+# memory-solution install-time variables.
+#
+# These are substituted into SKILL.md files during `bash scripts/install.sh`.
+# Copy to install.yaml and edit if you want a non-default value.
+#
+# You can also override at install time with environment variables:
+#   MEMORY_VAULT_ROOT=~/some/other/vault bash scripts/install.sh
+#
+# Per-user overrides (NOT git-tracked) can live at:
+#   ~/.config/memory-solution/install.yaml
+# They win over this file when present.
+
+vault_root: ~/Documents/agentstuffs

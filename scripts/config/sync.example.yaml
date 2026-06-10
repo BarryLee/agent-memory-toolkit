@@ -1,0 +1,44 @@
+# memory-solution sync configuration.
+#
+# Copy this file to sync.yaml and edit for your setup. The default location
+# the scripts look at is scripts/config/sync.yaml; pass --config to override.
+#
+# Schema (top-level keys):
+#   vault_root:  absolute or ~-prefixed path to the Obsidian vault.
+#                Defaults to ~/Documents/agentstuffs (overridable via the
+#                MEMORY_VAULT_ROOT env var).
+#   syncs:       list of mirror jobs. Each job has:
+#     - source:   absolute or ~-prefixed path to the directory to read from.
+#     - target:   path *relative* to <vault>/00Raw/. The source's
+#                 directory tree is recreated under <vault>/00Raw/<target>/.
+#     - include:  optional list of glob patterns (relative to `source`).
+#                 Only files matching at least one pattern are copied.
+#                 If omitted, every .md file under `source` is considered.
+#     - exclude:  optional list of glob patterns. Files matching any
+#                 pattern are skipped. Hard excludes (.obsidian, .git,
+#                 .DS_Store, node_modules, __pycache__, venv, build,
+#                 dist, .next, .turbo) are always applied.
+#     - delete:   optional bool (default false). If true, .md files in the
+#                 destination that no longer match the include/exclude
+#                 rules are removed.
+#
+# Glob syntax: standard fnmatch — `*` matches a single path component,
+# `**` matches across slashes. Patterns are matched against the file
+# path relative to `source`.
+
+vault_root: ~/Documents/agentstuffs
+
+syncs:
+  - source: ~/agent-workspaces
+    target: local/agent-workspaces
+    include:
+      - "**/*.md"
+    exclude:
+      - "memory-solution/docs/TODO.md"
+      - "*/node_modules/**/*.md"
+
+  - source: ~/code/example-app
+    target: code/example-app
+    # No `include` means: copy every .md file under `source`.
+    exclude:
+      - "**/CHANGELOG.md"

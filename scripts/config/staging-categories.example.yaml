@@ -1,0 +1,384 @@
+# memory-solution staging categories.
+#
+# Copy this file to staging-categories.yaml and edit. The keys are
+# category names (each becomes a directory under 10Staging/<name>/); the
+# value is the full body of that category's _guides.md (use a `|-` block
+# scalar for multi-line text).
+#
+# Each category's _guides.md should follow this structure:
+#
+#   # <Category> — guide
+#   <one-paragraph purpose>
+#   ## What goes here
+#   ## What does NOT go here
+#   ## Template
+#   ## Naming & file layout
+#   ## Don't forget
+#
+# The skill that creates new notes in this category asks the agent to
+# read _guides.md first, so the templates and "what does NOT go here"
+# rules live there — not in the skill itself.
+#
+# To add a category: add a new key below, then re-run `init_vault.py`.
+# The script creates 10Staging/<name>/_guides.md and
+# 10Staging/<name>/index.md (idempotent on both — never overwrites
+# _guides.md unless --force is passed, never overwrites index.md). It
+# also creates the matching 20Curated/<name>/ directory.
+#
+# To remove a category: delete its key here AND manually move/clean up
+# any existing 10Staging/<name>/ and 20Curated/<name>/ directories. The
+# init script does not delete data.
+
+Projects: |-
+  # Projects — guide
+
+  **One file per project.** Each file is a short summary (~5-15 lines)
+  plus wikilinks into the project's memory bank and any cross-cutting
+  notes. Keep these *summaries* — the detailed context lives in the
+  project's `memory-bank/` (a small structured set of working-memory
+  files under this same directory). The summary exists so an agent
+  can see, at a glance, which projects exist and how they relate.
+
+  ## What goes here
+
+  - One-line description of the project's purpose.
+  - Link to the project's memory bank.
+  - Links to relevant cross-project Learnings/Patterns.
+  - Status: active / paused / archived.
+
+  ## What does NOT go here
+
+  - Detailed design notes (those go in the project's memory bank or
+    in `00Raw/<project>/`).
+  - Code snippets (Patterns is the place for reusable snippets).
+  - Per-project TODO lists (the project's memory bank, or `TODO/` if
+    cross-project).
+
+  ## Template
+
+  ```markdown
+  # <project-name>
+
+  ## Source
+
+  `<absolute path to the project>`
+
+  ## Status
+
+  active | paused | archived
+
+  ## Summary
+
+  1-3 sentences: what is this project, what is its current shape.
+
+  ## Memory bank
+
+  If the project has a memory bank (see the `memory-bank` skill),
+  link its files here. Do not duplicate bank content into this
+  summary.
+  ```
+
+  ## Naming & file layout
+
+  - File name = directory name of the project, kebab-case:
+    `my-app.md`, `agent-stuff.md`.
+  - One project per file. Sub-files (e.g. subsystem notes) go in
+    a subdirectory `Projects/<project>/`.
+
+  ## Don't forget
+
+  Add a one-line entry to `Projects/index.md` with a wikilink and
+  one-sentence summary.
+
+Learnings: |-
+  # Learnings — guide
+
+  Knowledge the agent has acquired — typically from research,
+  reading docs, or working through a problem. **Knowledge** in the
+  first-principles sense: detailed, specific, often with examples
+  and links. Each file should be self-contained enough to be useful
+  without reading its source conversation.
+
+  ## What goes here
+
+  - "How X works" explanations with concrete examples.
+  - Library/API behavior that isn't obvious from the docs.
+  - Background reading the agent would otherwise have to redo.
+
+  ## What does NOT go here
+
+  - Reusable *techniques* (those go in `Patterns/`).
+  - User-imposed rules (those go in `Rules/`).
+  - Single-project-specific context (that goes in the project's
+    memory bank).
+
+  ## Template
+
+  ```markdown
+  # <Topic>
+
+  <One paragraph: what is this, why does the agent need to know.>
+
+  ## Details
+
+  <The actual content. Code snippets, API quirks, links, examples.>
+
+  ## See also
+
+  - [[other-learning]]
+  - [[related-pattern]]
+  ```
+
+  ## Naming & file layout
+
+  - File name = the concept, kebab-case: `python-decorators.md`,
+    `pi-fts-search.md`.
+  - For broad topics with multiple sub-topics, group under a
+    directory: `Learnings/rust/borrowing.md`, `Learnings/rust/lifetimes.md`.
+  - Link *out* to related notes at the bottom, not duplicated content.
+
+  ## Don't forget
+
+  Add a one-line entry to `Learnings/index.md` with a wikilink and
+  one-sentence summary.
+
+Patterns: |-
+  # Patterns — guide
+
+  Battle-tested *techniques* — recipes, cheatsheets, snippets, and
+  approaches that the agent has found to work. The difference from
+  `Learnings/` is **applicability**: a pattern is something you'd
+  *do*; a learning is something you'd *know*.
+
+  ## What goes here
+
+  - "When you need X, do Y" recipes with the exact commands.
+  - Snippets / templates that get reused across projects.
+  - Cheatsheets for tools you touch often.
+
+  ## What does NOT go here
+
+  - Conceptual knowledge (that goes in `Learnings/`).
+  - Long-form explanations — keep these terse, like a man page.
+  - One-off project tricks (those go in the project's memory bank).
+
+  ## Template
+
+  ```markdown
+  # <Pattern name>
+
+  **When:** <trigger — what situation makes you reach for this>
+  **Do:**   <the action, terse>
+
+  ## Steps
+
+  1. ...
+  2. ...
+
+  ## Snippet
+
+  <one or more code blocks, ready to copy-paste>
+
+  ## Gotchas
+
+  - ...
+  ```
+
+  ## Naming & file layout
+
+  - File name = the pattern, kebab-case: `rsync-mirror-into-vault.md`,
+    `git-bisect-for-flaky-tests.md`.
+  - Prefer one pattern per file. If a pattern has variants, either
+    split into multiple files or put variants under sub-headings
+    inside the same file.
+
+  ## Don't forget
+
+  Add a one-line entry to `Patterns/index.md` with a wikilink and
+  one-sentence summary.
+
+Rules: |-
+  # Rules — guide
+
+  Rules the user has **explicitly stated** the agent should follow.
+  These override the agent's defaults. A rule lives here only if the
+  user has said it out loud; inferred preferences are still defaults.
+
+  ## What goes here
+
+  - "Always do X before Y."
+  - "Never use Z."
+  - "When presenting options, do W."
+
+  ## What does NOT go here
+
+  - Things the agent thinks are good ideas.
+  - One-off project requirements (those go in the project's memory
+    bank or `20Curated/Rules/` once promoted).
+
+  Rules promoted from here to `20Curated/Rules/` are the agent's
+  contract; until then, the staging rule is *proposed*.
+
+  ## Template
+
+  ```markdown
+  # <Short rule name>
+
+  <One-sentence statement of the rule.>
+
+  ## Why
+
+  <Brief rationale. If the user said it out loud, quote them.>
+
+  ## Scope
+
+  <Where does this apply? Always? Only in project X? Only for type Y?>
+  ```
+
+  ## Naming & file layout
+
+  - File name = the rule, kebab-case: `no-emojis-in-code.md`,
+    `always-explain-tradeoffs.md`.
+  - If a rule has exceptions, put them in the `## Scope` section
+    rather than spawning a separate "exception" note.
+
+  ## Don't forget
+
+  Add a one-line entry to `Rules/index.md` with a wikilink and
+  one-sentence summary.
+
+TODO: |-
+  # TODO — guide
+
+  Cross-project TODOs. The criteria for inclusion is *cross-project
+  importance* — if the task only matters to one project, it belongs
+  in that project's memory bank, not here.
+
+  ## What goes here
+
+  - "Investigate X before next Y."
+  - Recurring housekeeping that has no natural home.
+  - Things the agent has flagged for the user to decide on.
+
+  ## What does NOT go here
+
+  - Per-project TODOs (project memory bank).
+  - Completed work (move to a `done/` subdir or delete).
+
+  ## Template
+
+  ```markdown
+  # <Task>
+
+  <One sentence: what and why.>
+
+  ## Acceptance
+
+  <How do we know this is done?>
+
+  ## Notes
+
+  <Links, context, blockers.>
+  ```
+
+  ## Naming & file layout
+
+  - File name = the task, kebab-case: `investigate-vector-db.md`,
+    `review-rules-quarterly.md`.
+  - Completed tasks: move to a `TODO/done/` subdir, or delete. Don't
+    leave stale items in the main `TODO/` view.
+
+  ## Don't forget
+
+  Add a one-line entry to `TODO/index.md` with a wikilink and
+  one-sentence summary.
+
+People: |-
+  # People — guide
+
+  People who have come up in sessions. Each file is a small dossier
+  of what the agent should know about them: their role, how to
+  contact them, what they care about, recent interactions.
+
+  ## What goes here
+
+  - One file per person.
+  - Plain, factual — this is the agent's working memory, not a
+    review.
+
+  ## What does NOT go here
+
+  - Sensitive or private data (keep to the agent's working set; do
+    not promote to Curated without the user's say-so).
+
+  ## Template
+
+  ```markdown
+  # <Full name>
+
+  ## Role
+
+  <What they do, where.>
+
+  ## Working notes
+
+  <How to interact, what they care about, recent context.>
+  ```
+
+  ## Naming & file layout
+
+  - File name = the person's name, kebab-case: `alice-chen.md`,
+    `bob-smith.md`.
+  - If you don't know their full name, use whatever identifier is
+    stable across sessions: a username, a handle, etc.
+
+  ## Don't forget
+
+  Add a one-line entry to `People/index.md` with a wikilink and
+  one-sentence summary.
+
+Events: |-
+  # Events — guide
+
+  Events, meetings, conferences, deadlines, or notable sessions
+  that came up in the agent's work. Each file is a self-contained
+  recap: what happened, what was decided, what's still open.
+
+  ## What goes here
+
+  - "Meeting with X about Y, decided Z, follow-ups: ..."
+  - Conference talk summaries with links.
+  - Time-bounded incidents (postmortems, outage timelines).
+
+  ## What does NOT go here
+
+  - Recurring meetings' standing agenda (use `People/` for that).
+
+  ## Template
+
+  ```markdown
+  # <Event name> — YYYY-MM-DD
+
+  <One paragraph: what happened.>
+
+  ## Decisions
+
+  - ...
+
+  ## Open follow-ups
+
+  - ...
+  ```
+
+  ## Naming & file layout
+
+  - File name = the event, kebab-case, with the date in the file
+    name when relevant: `meeting-with-acme-q3-2026.md`,
+    `obsidian-conference-2026.md`.
+  - For a series of related events (e.g. weekly syncs), group under
+    a subdirectory: `Events/weekly-sync/2026-06-10.md`.
+
+  ## Don't forget
+
+  Add a one-line entry to `Events/index.md` with a wikilink and
+  one-sentence summary.

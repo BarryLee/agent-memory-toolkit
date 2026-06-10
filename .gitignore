@@ -1,0 +1,25 @@
+# User-level / generated config — copy from the .example.yaml sibling.
+scripts/config/sync.yaml
+scripts/config/staging-categories.yaml
+scripts/config/install.yaml
+
+# Project-local memory-bank symlink (created by init_memory_bank.py,
+# points into the vault). Runtime artifact, not source.
+memory-bank
+.memory-bank
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Local artifacts
+.mypy_cache/
+*.egg-info/
+build/
+dist/
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
