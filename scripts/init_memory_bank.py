@@ -1,24 +1,19 @@
 #!/usr/bin/env python3
 """Initialize a project-local `memory-bank` directory.
 
-The bank is a small set of structured markdown files that act as the
-project's working memory — what the project is, what is being worked on
-right now, what patterns have emerged, and so on. Concretely it is a
-5-file set (projectBrief, activeContext, progress, systemPatterns,
-techContext). The bodies of those files are loaded from markdown
-template files in `scripts/config/templates/bank/` (see
-`_lib/templates.py` for the `{{name}}` placeholder syntax).
+By default this script only creates the vault-side `memory-bank/`
+directory and the project-side symlink pointing to it. Use
+`--scaffold` to also fill the directory with the 5 default template
+files (projectBrief, activeContext, progress, systemPatterns,
+techContext) loaded from `scripts/config/templates/bank/`.
 
 Layout on disk:
 
   <project-root>/
     memory-bank/          <-- symlink to the vault location below
   <vault>/10Staging/<category>/<project-slug>/memory-bank/
-    projectBrief.md
-    activeContext.md
-    progress.md
-    systemPatterns.md
-    techContext.md
+    (with --scaffold: projectBrief.md, activeContext.md, progress.md,
+     systemPatterns.md, techContext.md)
 
 The directory is named `memory-bank/` (no leading dot) so that
 Obsidian's file explorer shows it by default — the leading-dot
@@ -27,15 +22,13 @@ The vault stores the actual files; the project-side entry is a
 symlink so the agent and your editor see the same bytes as Obsidian
 does, and so both stay in sync without a copy step.
 
-This script creates only the 5 bank files and the project-side
-symlink. The cross-project summary note that lives at
+The cross-project summary note that lives at
 `10Staging/<category>/<slug>.md` is a `Projects`-category file and is
 created by the `update-memory-vault` skill (following the `Projects`
 category guide) — not by this script.
 
-The script is idempotent on the 5 bank files: existing files are
-never overwritten, only the symlink is re-created if missing. Run it
-once per project (or whenever you want to re-establish the link).
+This script is idempotent: the symlink is re-created if missing; with
+`--scaffold`, existing template files are never overwritten.
 """
 from __future__ import annotations
 
@@ -117,8 +110,13 @@ def _project_slug(project_root: Path) -> str:
     return safe_project_name(project_root.name)
 
 
-def _init_vault_bank(vault_dir: Path, vault_root: Path, bank_tmpls: dict[str, str]) -> None:
-    """Write the 5 bank files into `vault_dir`.
+def _ensure_vault_dir(vault_dir: Path) -> None:
+    """Create the vault-side `memory-bank/` directory (idempotent)."""
+    vault_dir.mkdir(parents=True, exist_ok=True)
+
+
+def _scaffold_bank(vault_dir: Path, vault_root: Path, bank_tmpls: dict[str, str]) -> None:
+    """Write the 5 scaffold template files into `vault_dir` (idempotent).
 
     `vault_root` is the actual vault root for this run (resolved),
     used to build the relative path printed by `info()`. We do NOT
@@ -126,7 +124,6 @@ def _init_vault_bank(vault_dir: Path, vault_root: Path, bank_tmpls: dict[str, st
     `MEMORY_VAULT_ROOT` env var (or defaults to
     `~/Documents/agentstuffs`) and ignores `--vault-root`.
     """
-    vault_dir.mkdir(parents=True, exist_ok=True)
     # No README in the bank. The pattern is documented in the
     # `memory-bank` skill's SKILL.md; duplicating a README into every
     # project is busywork.
@@ -179,6 +176,19 @@ def main() -> int:
             "skill.)"
         ),
     )
+    parser.add_argument(
+        "--scaffold",
+        action="store_true",
+        help=(
+            "Also create the 5 default template files in the bank "
+            "(projectBrief.md, activeContext.md, progress.md, "
+            "systemPatterns.md, techContext.md) from "
+            "scripts/config/templates/bank/. Without this flag, only "
+            "the vault-side directory and the project-side symlink are "
+            "created; you can fill the bank manually or via the "
+            "update-memory-vault skill."
+        ),
+    )
     args = parser.parse_args()
 
     project_root = args.project_root.resolve()
@@ -193,13 +203,21 @@ def main() -> int:
     section(f"Slug:    {slug}")
     section(f"Vault bank: {vault_dir}")
 
-    _init_vault_bank(vault_dir, vault_root, _load_bank_templates())
+    _ensure_vault_dir(vault_dir)
+    if args.scaffold:
+        bank_tmpls = _load_bank_templates()
+        section("Scaffolding template files")
+        _scaffold_bank(vault_dir, vault_root, bank_tmpls)
     _link_project_side(vault_dir, project_root)
     section("Done")
-    print("  Open the bank in Obsidian at:")
-    print(f"    <vault>/{STAGING}/{category}/{slug}/memory-bank/projectBrief.md")
-    print("  Or in your editor at:")
-    print(f"    {project_root}/memory-bank/")
+    if args.scaffold:
+        print("  Open the bank in Obsidian at:")
+        print(f"    <vault>/{STAGING}/{category}/{slug}/memory-bank/projectBrief.md")
+        print("  Or in your editor at:")
+        print(f"    {project_root}/memory-bank/")
+    else:
+        print("  Vault-side directory and project-side symlink created.")
+        print("  Use --scaffold to also create the 5 default template files.")
     return 0
 
 

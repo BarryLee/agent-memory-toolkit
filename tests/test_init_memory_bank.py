@@ -26,15 +26,17 @@ BANK_FILE_NAMES = [
 
 
 def run_init_bank(
-    vault_root: Path, project_root: Path, *extra: str
+    vault_root: Path, project_root: Path, *extra: str, scaffold: bool = True
 ) -> subprocess.CompletedProcess:
+    cmd = [
+        sys.executable, str(SCRIPT),
+        "--vault-root", str(vault_root),
+        "--project-root", str(project_root),
+    ]
+    if scaffold:
+        cmd.append("--scaffold")
     return subprocess.run(
-        [
-            sys.executable, str(SCRIPT),
-            "--vault-root", str(vault_root),
-            "--project-root", str(project_root),
-            *extra,
-        ],
+        [*cmd, *extra],
         check=False,
         capture_output=True,
         text=True,
@@ -181,6 +183,29 @@ def test_category_flag_changes_bank_location(tmp_path):
     result = run_init_bank(vault, project, "--category", "Projects")
     assert result.returncode == 0, result.stderr
     assert (vault / "10Staging" / "Projects" / "my-project" / "memory-bank" / "projectBrief.md").is_file()
+
+
+# --- default behavior (no --scaffold) -------------------------------------------
+
+
+def test_default_creates_only_dir_and_symlink(tmp_path):
+    """By default the script only creates the vault-side directory and the
+    project-side symlink — no template files are written unless --scaffold
+    is passed. This makes the script safe to re-run without overwriting
+    user-created bank files."""
+    vault = _resolved_vault(tmp_path)
+    project = _resolved_project(tmp_path)
+    result = run_init_bank(vault, project, scaffold=False)
+    assert result.returncode == 0, result.stderr
+    bank = vault / "10Staging" / "Projects" / "my-project" / "memory-bank"
+    # Vault-side directory was created.
+    assert bank.is_dir(), f"vault bank dir should exist: {bank}"
+    # Project-side symlink was created.
+    link = project / "memory-bank"
+    assert link.is_symlink(), f"symlink should exist: {link}"
+    # But the 5 template files were NOT created.
+    for name in BANK_FILE_NAMES:
+        assert not (bank / name).exists(), f"{name} should not exist without --scaffold"
 
 
 # --- error paths -------------------------------------------------------------
