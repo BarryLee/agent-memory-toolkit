@@ -221,7 +221,6 @@ for skill in "${SKILL_NAMES[@]}"; do
     continue
   else
     echo "Install skill: $skill?"
-    local answer
     select answer in "Yes" "Skip" "Yes to all remaining" "Skip all remaining" "Quit"; do
       case "$REPLY" in
         1) install_skills+=("$skill"); break ;;
@@ -259,7 +258,6 @@ for script in "${SCRIPT_NAMES[@]}"; do
     continue
   else
     echo "Install script: $script?"
-    local answer
     select answer in "Yes" "Skip" "Yes to all remaining" "Skip all remaining" "Quit"; do
       case "$REPLY" in
         1) install_scripts+=("$script"); break ;;
@@ -282,7 +280,6 @@ if [[ ${#install_scripts[@]} -gt 0 ]]; then
     add_scripts_to_path=true
     echo "  (auto: adding aliases)"
   else
-    local answer
     select answer in "Yes, add aliases" "No, install scripts only" "Quit"; do
       case "$REPLY" in
         1) add_scripts_to_path=true; break ;;
