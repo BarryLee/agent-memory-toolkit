@@ -54,10 +54,10 @@ $marker
 # Added by memory-solution install.sh
 # Scripts: init_memory_bank.py, init_vault.py, sync_raw.py
 for _script in init_memory_bank.py init_vault.py sync_raw.py; do
-  _path=\"$SCRIPTS_INSTALL_DIR/\$_script\"
+  _path=\"$PROJECT_ROOT/scripts/\$_script\"
   if [[ -f \"\$_path\" ]]; then
     alias \"\$_script\"=\"python3 \\\"\$_path\\\"\"
-    alias \"\$_script-scaffold\"=\"python3 \\\"\$_path\\\" --scaffold\"
+    [[ \"\$_script\" == \"init_memory_bank.py\" ]] && alias \"\$_script-scaffold\"=\"python3 \\\"\$_path\\\" --scaffold\"
   fi
 done
 unset _script _path
@@ -176,14 +176,14 @@ if [[ "$MODE" == "dry-run" ]]; then
   echo "=== Dry run — no changes will be made ==="
   echo
   echo "Skills install root: $SKILLS_INSTALL_ROOT"
-  echo "Scripts install dir: $SCRIPTS_INSTALL_DIR"
+  echo "Scripts location: $PROJECT_ROOT/scripts/"
   echo
   echo "Skills that would be rendered:"
   for s in "${SKILL_NAMES[@]}"; do
     echo "  - $s"
   done
   echo
-  echo "Scripts that would be copied:"
+  echo "Scripts that would be aliased:"
   for s in "${SCRIPT_NAMES[@]}"; do
     echo "  - $s"
   done
@@ -199,7 +199,7 @@ fi
 echo "=== memory-solution install ==="
 echo
 echo "Skills install root: $SKILLS_INSTALL_ROOT"
-echo "Scripts install dir: $SCRIPTS_INSTALL_DIR"
+echo "Scripts location: $PROJECT_ROOT/scripts/"
 echo
 
 # ---------------------------------------------------------------------------
@@ -240,7 +240,7 @@ done
 echo
 echo "=== Scripts ==="
 echo "Select which scripts to install. Scripts are copied to"
-echo "  $SCRIPTS_INSTALL_DIR/"
+echo "  $PROJECT_ROOT/scripts/"
 echo "and can be added to your PATH via shell aliases."
 echo
 
@@ -274,8 +274,8 @@ done
 if [[ ${#install_scripts[@]} -gt 0 ]]; then
   echo
   echo "Add aliases to your shell (~/.bashrc / ~/.zshrc) so these scripts"
-  echo "are available as commands? The aliases will call 'python3 <script>'
-  with the correct paths."
+  echo "are available as commands. Aliases point to
+  $PROJECT_ROOT/scripts/<script>."
   if [[ "$MODE" == "auto" ]]; then
     add_scripts_to_path=true
     echo "  (auto: adding aliases)"
@@ -311,13 +311,10 @@ fi
 
 # Scripts.
 if [[ ${#install_scripts[@]} -gt 0 ]]; then
-  mkdir -p "$SCRIPTS_INSTALL_DIR"
   for script in "${install_scripts[@]}"; do
-    cp "$SCRIPT_DIR/$script" "$SCRIPTS_INSTALL_DIR/$script"
-    chmod +x "$SCRIPTS_INSTALL_DIR/$script"
-    echo "  installed script: $script"
+    echo "  added alias: $script"
   done
-  echo "  scripts installed to $SCRIPTS_INSTALL_DIR"
+  echo "  scripts are aliased to $PROJECT_ROOT/scripts/"
 else
   echo "  no scripts selected — skipping"
 fi
@@ -340,10 +337,10 @@ if [[ ${#install_skills[@]} -gt 0 ]]; then
   echo "  In pi: skills appear in the system prompt and as /skill:<name> commands."
 fi
 if [[ ${#install_scripts[@]} -gt 0 ]]; then
-  echo "Scripts: $SCRIPTS_INSTALL_DIR/"
+  echo "Scripts: $PROJECT_ROOT/scripts/"
   echo "  Available as commands after sourcing your shell RC (or restart shell)."
 fi
 if [[ "$add_scripts_to_path" != true && ${#install_scripts[@]} -gt 0 ]]; then
-  echo "  Note: scripts were installed but aliases were NOT added to your shell."
+  echo "  Note: aliases were NOT added to your shell — scripts won't be available as commands."
   echo "  To add aliases later, re-run this script and choose 'Yes, add aliases'."
 fi
