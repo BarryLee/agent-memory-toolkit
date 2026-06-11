@@ -41,16 +41,10 @@ confirm() {
 }
 
 add_aliases_to_shell() {
-  # Detect shell and append alias snippet to the shell RC file.
-  local rc_file=""
-  if [[ -n "${ZSH_VERSION:-}" ]]; then
-    rc_file="$HOME/.zshrc"
-  elif [[ -n "${BASH_VERSION:-}" ]]; then
-    rc_file="$HOME/.bashrc"
-  else
-    rc_file="$HOME/.profile"
-  fi
-
+  # Use $SHELL (the user's login shell) to detect which shell to update.
+  # We install to both ~/.bashrc and ~/.zshrc so it works regardless of
+  # which shell the user actually starts. The marker block is identical
+  # so uninstall works cleanly from either file.
   local marker="# >>> memory-solution >>>"
   local end_marker="# <<< memory-solution <<<"
 
@@ -76,8 +70,20 @@ unset _script _path
 $end_marker
 "
 
-  printf '%s' "$alias_block" >> "$rc_file"
-  echo "  Aliases written to $rc_file. Run 'source $rc_file' or start a new shell."
+  # Update both RC files; idempotent on re-runs (block replaced).
+  for rc_file in "$HOME/.bashrc" "$HOME/.zshrc"; do
+    # Remove any existing block first.
+    if grep -q "$marker" "$rc_file" 2>/dev/null; then
+      sed -i '' "/$marker/,/$end_marker/d" "$rc_file" 2>/dev/null \
+        || sed -i "/$marker/,/$end_marker/d" "$rc_file"
+    fi
+    # Only append if the file exists and is writable.
+    if [[ -f "$rc_file" && -w "$rc_file" ]]; then
+      printf '%s' "$alias_block" >> "$rc_file"
+      echo "  Aliases written to $rc_file."
+    fi
+  done
+  echo "  Run 'source ~/.bashrc' and 'source ~/.zshrc', or start a new shell."
 }
 
 # ---------------------------------------------------------------------------
