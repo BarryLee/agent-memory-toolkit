@@ -1,6 +1,6 @@
 ---
 name: update-memory-vault
-description: Record session learnings, patterns, rules, people, events, or cross-project TODOs into the memory vault's staging area. Also maintains active context. Write in Obsidian style with [[wikilinks]] and #tags. Use grep to peek frontmatter descriptions before reading full guides.
+description: Record session learnings, patterns, rules, people, events, or cross-project TODOs into the memory vault's staging area. Also updates the user's active-context note in the vault. Write in Obsidian style with [[wikilinks]] and #tags. Use grep to peek frontmatter descriptions before reading full guides.
 ---
 
 # update-memory-vault
@@ -19,14 +19,15 @@ which category the new material belongs in.
 
 ## What "active context" means
 
-`${VAULT_ROOT}/10Staging/ActiveContext.md` is the **hot** memory. Treat
-it as the agent's scratchpad for *what is active right now*. It can
-hold entries for several recent, active tasks at once — a task stays
-here while it is the focus of ongoing work, and only leaves when it is
-done (or no longer active). After any non-trivial task, check it: if
-it is stale or missing the current focus, update it. Keep it short —
-entries that are no longer recent or active should be summarized into
-a category note and trimmed from active context.
+`${VAULT_ROOT}/10Staging/ActiveContext.md` is the user's **hot** memory for
+*what is active right now*. It records the user's ongoing tasks and
+current focus — not the agent's internal task list. It can hold
+entries for several recent, active tasks at once — a task stays here
+while it is the focus of ongoing work, and only leaves when it is done
+(or no longer active). After any non-trivial session, check it: if it is
+stale or missing the current focus, update it. Keep it short — entries
+that are no longer recent or active should be summarized into a
+category note and trimmed from active context.
 
 ## Step 1 — choose the category
 
