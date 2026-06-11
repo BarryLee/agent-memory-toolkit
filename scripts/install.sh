@@ -45,15 +45,9 @@ add_aliases_to_shell() {
   # We install to both ~/.bashrc and ~/.zshrc so it works regardless of
   # which shell the user actually starts. The marker block is identical
   # so uninstall works cleanly from either file.
+  local rc_file=""   # suppress "unbound variable" under set -u
   local marker="# >>> memory-solution >>>"
   local end_marker="# <<< memory-solution <<<"
-
-  # Remove any existing block first (so re-running is clean).
-  if grep -q "$marker" "$rc_file" 2>/dev/null; then
-    # Remove the block between markers (sed in-place, cross-platform).
-    sed -i '' "/$marker/,/$end_marker/d" "$rc_file" 2>/dev/null \
-      || sed -i "/$marker/,/$end_marker/d" "$rc_file"
-  fi
 
   local alias_block="
 $marker
