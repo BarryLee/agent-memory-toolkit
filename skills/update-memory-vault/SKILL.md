@@ -1,6 +1,6 @@
 ---
 name: update-memory-vault
-description: Record something from the current session into the staging area of the Obsidian memory vault. Use when the user asks to remember, note, save, or capture something; when a session produced a non-trivial learning, pattern, rule, person, event, or project update; or when active context is stale. Reads the active vault root (default ${VAULT_ROOT}) and decides which category fits the new material.
+description: Record session learnings, patterns, rules, people, events, or cross-project TODOs into the memory vault's staging area. Also maintains active context. Use grep to peek frontmatter descriptions before reading full guides.
 ---
 
 # update-memory-vault
@@ -36,10 +36,11 @@ so do **not** rely on any fixed list you have seen before. Instead:
 
 1. Read `${VAULT_ROOT}/10Staging/AGENTS.md`. It contains a "Categories
    at a glance" section that is the authoritative current list.
-2. For each candidate category, read its
-   `${VAULT_ROOT}/10Staging/<category>/_guides.md`. The guide
-   disambiguates the categories and tells you what does and doesn't
-   belong.
+2. For each candidate category, **peek the frontmatter description**
+   instead of reading the full guide. Use:
+   `grep -m 1 'description:' "${VAULT_ROOT}/10Staging/<category>/_guides.md"`
+   This gives you the one-line summary in seconds. Read the full guide
+   only when you actually need to write a note in that category.
 3. The filesystem is the source of truth — if a category exists on
    disk that isn't in AGENTS.md, trust the disk.
 
@@ -50,11 +51,11 @@ at a glance" so the next agent can find it. Don't proliferate
 categories — one good new category is fine, several are a sign you
 should re-think.
 
-## Step 2 — read the category's `_guides.md` and follow it
+## Step 2 — read the category's `_guides.md` when needed
 
-For the category you chose, read
-`${VAULT_ROOT}/10Staging/<category>/_guides.md` *in full* before
-writing. It contains:
+After picking a category, read its `_guides.md` *in full* before
+writing. The file has frontmatter at the top (a `description` field);
+use that for a quick summary. The full guide covers:
 
 - **What goes here** vs **what does NOT go here** — the boundaries of
   the category.

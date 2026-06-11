@@ -102,13 +102,20 @@ def test_creates_all_bundled_categories(tmp_path):
 
 
 def test_guides_md_content_matches_categories_config(tmp_path):
-    """Each category's `_guides.md` body comes from staging-categories.yaml."""
+    """Each category's `_guides.md` body comes from staging-categories.yaml.
+
+    The body starts with YAML frontmatter (--- description: ... ---), then
+    the guide header.
+    """
     vault = _resolved_vault(tmp_path)
     result = run_init_vault(vault)
     assert result.returncode == 0, result.stderr
-    projects_guides = (vault / "10Staging" / "Projects" / "_guides.md").read_text()
-    # The bundled example starts with the standard guide header.
-    assert projects_guides.startswith("# Projects — guide")
+    projects_guide = (vault / "10Staging" / "Projects" / "_guides.md").read_text()
+    # The bundled example starts with frontmatter, then the guide header.
+    assert projects_guide.startswith("---")
+    assert "# Projects — guide" in projects_guide
+    # Frontmatter must include a description field.
+    assert "description:" in projects_guide
 
 
 # --- curated root ------------------------------------------------------------
