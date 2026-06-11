@@ -17,14 +17,16 @@ When called, read `${VAULT_ROOT}/10Staging/AGENTS.md` first if you have
 not already in this session — it has the workflow rules. Then decide
 which category the new material belongs in.
 
-## What "current task memory" means
+## What "active context" means
 
 `${VAULT_ROOT}/10Staging/ActiveContext.md` is the **hot** memory. Treat
-it as the agent's scratchpad for *what is happening right now*. After
-any non-trivial task, check it: if it is stale or missing the current
-focus, update it. Keep it short — entries older than the current focus
-should be summarized into a category note and trimmed from active
-context.
+it as the agent's scratchpad for *what is active right now*. It can
+hold entries for several recent, active tasks at once — a task stays
+here while it is the focus of ongoing work, and only leaves when it is
+done (or no longer active). After any non-trivial task, check it: if
+it is stale or missing the current focus, update it. Keep it short —
+entries that are no longer recent or active should be summarized into
+a category note and trimmed from active context.
 
 ## Step 1 — choose the category
 
@@ -84,9 +86,10 @@ File-level rules that apply on top of the category template:
 After writing, ask: does `${VAULT_ROOT}/10Staging/ActiveContext.md`
 need an update?
 
-- New project, new ongoing task → write the focus there.
-- Task completed → trim the entry, summarize the outcome into the
-  appropriate category note, and rotate.
+- New project, new ongoing task → add the focus there. Multiple
+  recent, active tasks can coexist in this file.
+- Task completed or no longer active → trim that entry, summarize
+  the outcome into the appropriate category note, and rotate.
 
 `ActiveContext.md` should rarely exceed ~20 lines. If it does, you've
 stopped treating it as hot memory.

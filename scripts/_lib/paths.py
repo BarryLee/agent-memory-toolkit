@@ -23,6 +23,13 @@ CURATED = "20Curated"
 # Default path to the staging-categories config (relative to the project).
 DEFAULT_STAGING_CATEGORIES_CONFIG = Path(__file__).resolve().parent.parent / "config" / "staging-categories.yaml"
 
+# Markdown template directory. Templates are plain `.md.tmpl` files
+# with `{{name}}` placeholders; see `_lib/templates.py` for the syntax
+# and the render/load helpers.
+TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "config" / "templates"
+VAULT_TEMPLATES_DIR = TEMPLATES_DIR / "vault"
+BANK_TEMPLATES_DIR = TEMPLATES_DIR / "bank"
+
 # Hard-coded fallback used only if the YAML config is missing or malformed.
 # Keep this in sync with scripts/config/staging-categories.example.yaml.
 DEFAULT_STAGING_CATEGORIES: dict[str, str] = {}

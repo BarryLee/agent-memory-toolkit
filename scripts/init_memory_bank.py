@@ -5,7 +5,9 @@ The bank is a small set of structured markdown files that act as the
 project's working memory — what the project is, what is being worked on
 right now, what patterns have emerged, and so on. Concretely it is a
 5-file set (projectBrief, activeContext, progress, systemPatterns,
-techContext) — see BANK_TEMPLATES below.
+techContext). The bodies of those files are loaded from markdown
+template files in `scripts/config/templates/bank/` (see
+`_lib/templates.py` for the `{{name}}` placeholder syntax).
 
 Layout on disk:
 
@@ -25,6 +27,12 @@ The vault stores the actual files; the project-side entry is a
 symlink so the agent and your editor see the same bytes as Obsidian
 does, and so both stay in sync without a copy step.
 
+This script creates only the 5 bank files and the project-side
+symlink. The cross-project summary note that lives at
+`10Staging/<category>/<slug>.md` is a `Projects`-category file and is
+created by the `update-memory-vault` skill (following the `Projects`
+category guide) — not by this script.
+
 The script is idempotent on the 5 bank files: existing files are
 never overwritten, only the symlink is re-created if missing. Run it
 once per project (or whenever you want to re-establish the link).
@@ -39,6 +47,7 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from scripts._lib.paths import (
+        BANK_TEMPLATES_DIR,
         STAGING,
         die,
         info,
@@ -46,8 +55,10 @@ if __package__ in (None, ""):
         safe_project_name,
         staging_root,
     )
+    from scripts._lib import templates
 else:
     from _lib.paths import (
+        BANK_TEMPLATES_DIR,
         STAGING,
         die,
         info,
@@ -55,6 +66,7 @@ else:
         safe_project_name,
         staging_root,
     )
+    from _lib import templates
 
 
 PROJECT_ROOT_HELP = (
@@ -64,65 +76,32 @@ PROJECT_ROOT_HELP = (
 VAULT_ROOT_HELP = "Obsidian vault root. Defaults to ~/Documents/agentstuffs."
 
 
-# The 5 canonical memory-bank files. Templates are deliberately short —
-# they scaffold the shape, not the content. Agents/users will fill them
-# in. The pattern itself (5 files, fixed names) is documented in the
-# `memory-bank` skill's SKILL.md, which is the right place to look for
-# "what is a memory bank and how do I use it" — not a README inside the
-# bank (which would be duplicated in every project).
-BANK_TEMPLATES: dict[str, str] = {
-    "projectBrief.md": (
-        "# Project Brief\n\n"
-        "One-paragraph description of what this project is, who it serves, "
-        "and what success looks like. Update this last; it is the highest-"
-        "level summary and should be derivable from the other files.\n"
-    ),
-    "activeContext.md": (
-        "# Active Context\n\n"
-        "The current focus: what is being worked on right now, recent "
-        "decisions, and the next concrete step. Keep this *short* and "
-        "temporal — entries older than the current focus should move to "
-        "progress.md.\n\n"
-        "## Current focus\n\n"
-        "- \n\n"
-        "## Recent decisions\n\n"
-        "- \n\n"
-        "## Next step\n\n"
-        "- \n"
-    ),
-    "progress.md": (
-        "# Progress\n\n"
-        "Append-only log of milestones and their dates. Keep entries short "
-        "(1-3 lines). Use ISO dates in headers.\n\n"
-        "## YYYY-MM-DD\n\n"
-        "- \n"
-    ),
-    "systemPatterns.md": (
-        "# System Patterns\n\n"
-        "Architecture and design conventions specific to this project. "
-        "Cross-project patterns belong in the curated vault under the "
-        "cross-project patterns category, and should be linked from here "
-        "rather than duplicated.\n\n"
-        "## Architecture\n\n"
-        "- \n\n"
-        "## Conventions\n\n"
-        "- \n\n"
-        "## Project-local patterns\n\n"
-        "- \n"
-    ),
-    "techContext.md": (
-        "# Tech Context\n\n"
-        "Languages, frameworks, build/test commands, deployment, and the "
-        "specific toolchain quirks that an agent would otherwise have to "
-        "rediscover. Keep this as a *quick-reference*, not a tutorial.\n\n"
-        "## Stack\n\n"
-        "- \n\n"
-        "## Build & test\n\n"
-        "```bash\n# example\n```\n\n"
-        "## Quirks\n\n"
-        "- \n"
-    ),
-}
+# The 5 canonical memory-bank files. Their *names* are fixed (the
+# `memory-bank` skill's SKILL.md documents the pattern; an Obsidian
+# user should be able to find these by name) — only the *bodies* are
+# externalized to templates. The script never creates a README inside
+# the bank; the pattern is documented in the skill.
+_BANK_TEMPLATE_FILES: list[tuple[str, str]] = [
+    # (output filename in bank, template filename under scripts/config/templates/bank/).
+    # Output names are camelCase (the on-disk bank files); templates
+    # are kebab-case to match the vault template convention.
+    ("projectBrief.md", "project-brief.md.tmpl"),
+    ("activeContext.md", "active-context.md.tmpl"),
+    ("progress.md", "progress.md.tmpl"),
+    ("systemPatterns.md", "system-patterns.md.tmpl"),
+    ("techContext.md", "tech-context.md.tmpl"),
+]
+
+
+def _load_bank_templates() -> dict[str, str]:
+    """Load the 5 bank templates. None of them have placeholders.
+
+    Returns a dict keyed by file basename (e.g. `"projectBrief.md"`).
+    """
+    return {
+        out_name: templates.load(BANK_TEMPLATES_DIR / tmpl_name)
+        for out_name, tmpl_name in _BANK_TEMPLATE_FILES
+    }
 
 
 def _project_slug(project_root: Path) -> str:
@@ -138,38 +117,26 @@ def _project_slug(project_root: Path) -> str:
     return safe_project_name(project_root.name)
 
 
-def _init_vault_bank(vault_dir: Path, project_slug: str, project_root: Path, category: str) -> None:
+def _init_vault_bank(vault_dir: Path, vault_root: Path, bank_tmpls: dict[str, str]) -> None:
+    """Write the 5 bank files into `vault_dir`.
+
+    `vault_root` is the actual vault root for this run (resolved),
+    used to build the relative path printed by `info()`. We do NOT
+    use `staging_root().parent` here because that helper reads the
+    `MEMORY_VAULT_ROOT` env var (or defaults to
+    `~/Documents/agentstuffs`) and ignores `--vault-root`.
+    """
     vault_dir.mkdir(parents=True, exist_ok=True)
     # No README in the bank. The pattern is documented in the
     # `memory-bank` skill's SKILL.md; duplicating a README into every
     # project is busywork.
-    for name, body in BANK_TEMPLATES.items():
-        target = vault_dir / name
+    for out_name in bank_tmpls:
+        target = vault_dir / out_name
         if target.exists():
-            info(f"exists  {target.relative_to(staging_root().parent)}")
+            info(f"exists  {target.relative_to(vault_root)}")
             continue
-        target.write_text(body)
-        info(f"created {target.relative_to(staging_root().parent)}")
-
-    # Also ensure there's a 10Staging/<category>/<slug>.md summary note
-    # that links to the bank. This is the cross-project pointer.
-    project_note = staging_root() / category / f"{project_slug}.md"
-    project_note.parent.mkdir(parents=True, exist_ok=True)
-    if not project_note.exists():
-        body = (
-            f"# {project_slug}\n\n"
-            f"## Source\n\n"
-            f"`{project_root}`\n\n"
-            f"## Memory bank\n\n"
-            f"See [[{project_slug}/memory-bank/projectBrief]]. The 5-file "
-            f"bank lives under "
-            f"`10Staging/{category}/{project_slug}/memory-bank/` and is "
-            f"symlinked into the project root as `memory-bank`.\n\n"
-            f"## Summary\n\n"
-            f"_Add a 1-3 sentence description of what this project is._\n"
-        )
-        project_note.write_text(body)
-        info(f"created {project_note.relative_to(staging_root().parent)}")
+        target.write_text(bank_tmpls[out_name])
+        info(f"created {target.relative_to(vault_root)}")
 
 
 def _link_project_side(vault_dir: Path, project_root: Path) -> None:
@@ -204,10 +171,12 @@ def main() -> int:
         "--category",
         default="Projects",
         help=(
-            "Staging category under which to create the project's memory "
-            "bank directory and summary note. Defaults to 'Projects' — "
-            "override if you renamed that category in your "
-            "staging-categories.yaml."
+            "Staging category under which the memory bank directory "
+            "lives. Defaults to 'Projects' — override if you renamed "
+            "that category in your staging-categories.yaml. (The cross-"
+            "project summary note is not created by this script; it is a "
+            "Projects-category file written by the `update-memory-vault` "
+            "skill.)"
         ),
     )
     args = parser.parse_args()
@@ -218,12 +187,13 @@ def main() -> int:
 
     slug = args.name or _project_slug(project_root)
     category = args.category
-    vault_dir = (args.vault_root / STAGING / category / slug / "memory-bank").resolve()
+    vault_root = args.vault_root.resolve()
+    vault_dir = vault_root / STAGING / category / slug / "memory-bank"
     section(f"Project: {project_root}")
     section(f"Slug:    {slug}")
     section(f"Vault bank: {vault_dir}")
 
-    _init_vault_bank(vault_dir, slug, project_root, category)
+    _init_vault_bank(vault_dir, vault_root, _load_bank_templates())
     _link_project_side(vault_dir, project_root)
     section("Done")
     print("  Open the bank in Obsidian at:")

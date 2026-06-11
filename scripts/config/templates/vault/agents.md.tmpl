@@ -1,0 +1,49 @@
+# Vault Conventions — for agents
+
+This vault is a structured memory store. Three top-level
+directories encode trust:
+
+- `00Raw/` — **READ ONLY to agents.** A read-only mirror of
+  project sources. Anything agent-written here is a bug.
+- `10Staging/` — **agent-written** drafts. Anything in here is a
+  *proposal* until the user reviews and promotes it.
+- `20Curated/` — **READ ONLY to agents.** Human-edited,
+  human-curated trusted memory. The user is the only one who
+  writes here. Treat the contents as ground truth when
+  answering from this vault.
+
+## Workflow
+
+1. To record something from a session, write to the appropriate
+   category under `10Staging/`. Read that category's `_guides.md`
+   first; it disambiguates the categories and gives you the
+   template.
+2. Update the category's `index.md` with a one-line summary of the
+   new note.
+3. For high-frequency context (what is the agent working on *right
+   now*?), update `10Staging/ActiveContext.md`. Keep it short and
+   current.
+4. The user promotes notes from `10Staging/` to `20Curated/`
+   after review. This is a manual step — do not assume a note is
+   trusted just because it's old.
+
+## Categories at a glance
+
+{{categories_list}}
+
+## First principles
+
+- **Memory vs. knowledge**: this store holds both. Memory is
+  compressed — summaries and indexes. Knowledge is the
+  detailed layer below. Any category that admits detailed
+  notes still needs an `index.md` that summarizes its
+  contents — the categories list above tells you which
+  those are by reading their `_guides.md`.
+- **Cross-project only**: anything tied to a single project
+  belongs in that project's memory bank, not here. The
+  project-summary category in this vault exists to make the
+  vault discoverable from any project, not to hold project-
+  local detail.
+- **Optimize for the agent, not the human**: structure, indexes,
+  and consistent naming matter more than prose. The human
+  benefit is a side effect.
