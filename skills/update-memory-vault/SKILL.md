@@ -1,6 +1,6 @@
 ---
 name: update-memory-vault
-description: Record session learnings, patterns, rules, people, events, or cross-project TODOs into the memory vault's staging area. Also maintains active context. Use grep to peek frontmatter descriptions before reading full guides.
+description: Record session learnings, patterns, rules, people, events, or cross-project TODOs into the memory vault's staging area. Also maintains active context. Write in Obsidian style with [[wikilinks]] and #tags. Use grep to peek frontmatter descriptions before reading full guides.
 ---
 
 # update-memory-vault
@@ -81,6 +81,12 @@ File-level rules that apply on top of the category template:
 - If a topic spans multiple files (e.g. a project with sub-systems),
   create a subdirectory following whatever the category's
   `_guides.md` recommends.
+- **Write in Obsidian style**: use `[[wikilinks]]` to cross-link
+  related notes (e.g. `[[my-pattern]]`, `[[project-x]]`) and add
+  `#tags` where they help navigation — including nested tags like
+  `#python/decorators` or `#project/backlog`. A note that is
+  discoverable through tags and links is far more useful than one
+  that relies solely on search.
 
 ## Step 4 — maintain active context
 
