@@ -58,8 +58,8 @@ to do exactly that before writing. If no, we either:
   branch and write the result back" pattern.
 
 **Action:** research pi's SDK + branching commands. See
-`/Users/hugo/.local/share/mise/installs/node/24.16.0/lib/node_modules/@earendil-works/pi-coding-agent/docs/sdk.md`
-and `tui.md` for what is available.
+`~/.local/share/mise/installs/node/24.16.0/lib/node_modules/@earendil-works/pi-coding-agent/docs/sdk.md`
+and `tui.md` for what is available. Also, use web search to investigate.
 
 ## `promote` CLI (P1)
 
@@ -71,34 +71,9 @@ shape. Idempotent (refuse to overwrite a curated file unless
 `--force`). Optionally delete the staging copy (`--delete`, off
 by default — staging notes can be useful to keep around).
 
-## Tests (P2)
+## Offline session summarizing and memory extraction
 
-We have no automated tests. The scripts are small but worth a
-smoke-test layer:
-
-- `init_vault.py`: idempotent, respects `--force`, fails clearly
-  on a missing categories config.
-- `init_memory_bank.py`: creates the bank, creates the symlink,
-  refuses to clobber an existing symlink or non-symlink.
-- `sync_raw.py`: `--apply` does the right thing; `--delete`
-  removes stale files; rsync itemize parsing counts correctly
-  under both GNU rsync and openrsync.
-- `render.py`: substitutes vars, falls back to the example
-  config, surfaces missing vars clearly.
-
-Framework: pytest, run from the project root. The tests can use a
-throwaway vault root (a `tmp_path` fixture).
-
-## Installer polish (P2)
-
-`install.sh` writes to `~/.agents/skills/`. We should also:
-
-- Verify the destination is actually a directory pi scans (per
-  the docs, both `~/.agents/skills/` and `~/.pi/agent/skills/`
-  work; pick the first one that exists, document the choice).
-- Print a hint if the user has multiple pi installs with
-  different config dirs.
-- Add an `uninstall` mode (`bash scripts/install.sh --uninstall`).
+The current workflow relies on manually or agent proactively triggering the skills in session. An alternative approach is to have an agent inspect offline session logs and update the memory bank and memory vault according to their respective rules (e.g. have the agent referring to the skills).
 
 ## Git / history of curated (P3)
 
@@ -112,15 +87,6 @@ they can either:
 
 Out of scope for the scripts; document the trade-off in the
 README if/when the user wants it.
-
-## Per-project vault isolation (P3)
-
-Currently every project shares one vault. A possible future
-feature: per-project vault roots, so that work in a sensitive
-project doesn't accidentally leak into the global memory. This
-is more of a configuration question (`MEMORY_VAULT_ROOT` per
-project) than a code question. The infrastructure already
-supports it (the env var is checked in `paths.py`).
 
 ## Skill description tuning (P3)
 
