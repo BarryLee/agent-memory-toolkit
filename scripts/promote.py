@@ -81,7 +81,12 @@ def open_in_obsidian(file_path: Path) -> None:
     os.system(f'open "{obsidian_uri}"')
 
 
-def main():
+def main() -> bool:
+    """Run the promote operation.
+    
+    Returns True on success, False on failure.
+    Never calls sys.exit — let the caller decide what to do.
+    """
     parser = argparse.ArgumentParser(description="Promote a note from 10Staging/ to 20Curated/")
     parser.add_argument("file", help="Path to the staging file")
     parser.add_argument("--force", action="store_true", help="Overwrite existing curated file")
@@ -93,12 +98,16 @@ def main():
     staging_path = Path(args.file).expanduser()
     success = promote(staging_path, force=args.force, delete=args.delete)
     
-    if success and not args.no_open:
+    if not success:
+        return False
+    
+    if not args.no_open:
         dest_path = get_dest_path(staging_path)
         open_in_obsidian(dest_path)
     
-    sys.exit(0 if success else 1)
+    return True
 
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    sys.exit(0 if success else 1)
