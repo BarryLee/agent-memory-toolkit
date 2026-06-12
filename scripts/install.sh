@@ -52,8 +52,8 @@ add_aliases_to_shell() {
   local alias_block="
 $marker
 # Added by memory-solution install.sh
-# Scripts: init_memory_bank.py, init_vault.py, sync_raw.py
-for _script in init_memory_bank.py init_vault.py sync_raw.py; do
+# Scripts: init_memory_bank.py, init_vault.py, promote.py, sync_raw.py
+for _script in init_memory_bank.py init_vault.py promote.py sync_raw.py; do
   _path=\"$PROJECT_ROOT/scripts/\$_script\"
   if [[ -f \"\$_path\" ]]; then
     alias \"\$_script\"=\"python3 \\\"\$_path\\\"\"
@@ -165,6 +165,7 @@ done < <(find "$SKILLS_SRC" -maxdepth 1 -type d ! -name "skills" | sort)
 SCRIPT_NAMES=(
   "init_memory_bank.py"
   "init_vault.py"
+  "promote.py"
   "sync_raw.py"
 )
 

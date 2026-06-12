@@ -3,27 +3,19 @@
 Known gaps and follow-up work for the memory-solution. Items are
 roughly ordered by priority.
 
-## Promote shortcut (P1)
+## Promote shortcut (P1) — DONE ✓
 
-Today, promoting a note from `10Staging/` to `20Curated/` is
-manual: open the file in Obsidian, copy it to the matching path
-under `20Curated/`. This is fine, but a one-keybind shortcut would
-be nice for the common case.
+**Approach:** Obsidian Shell Commands plugin + `promote.py` script.
 
-Options to evaluate:
+The plugin provides `{{file_path}}` when a note is open, solving
+the "how do we know which file?" problem natively.
 
-- Obsidian's "Quick switcher + custom command" plugin.
-- A Hammerspoon / Karabiner / Raycast hotkey that runs a small
-  Python script (`promote.py`, not yet written) to do the
-  file-system move.
-- Obsidian URI handler with a small wrapper script.
+**Files created:**
+- `scripts/promote.py` — the promotion script
+- `docs/promote-shortcut-setup.md` — setup instructions
 
-**Decision pending:** pick the option that does not require
-installing a heavy plugin. Whatever we choose, the underlying
-operation should be a single Python script that takes a
-`10Staging/<category>/<note>.md` path and copies it to
-`20Curated/<category>/<note>.md` (preserving the relative
-category).
+**Usage:** Open a note in `10Staging/`, press hotkey (e.g.
+`Cmd+Shift+P`), file is copied to `20Curated/` and opened.
 
 ## Vector search over the vault (P1)
 
@@ -61,15 +53,10 @@ to do exactly that before writing. If no, we either:
 `~/.local/share/mise/installs/node/24.16.0/lib/node_modules/@earendil-works/pi-coding-agent/docs/sdk.md`
 and `tui.md` for what is available. Also, use web search to investigate.
 
-## `promote` CLI (P1)
+## `promote` CLI (P1) — DONE ✓
 
-The Python script backing the promote shortcut above. Will be
-written when we pick a hotkey mechanism. Behavior: take a path
-under `10Staging/`, copy it to `20Curated/`, preserving the
-relative `10Staging/<category>/<note>` → `20Curated/<category>/<note>`
-shape. Idempotent (refuse to overwrite a curated file unless
-`--force`). Optionally delete the staging copy (`--delete`, off
-by default — staging notes can be useful to keep around).
+Implemented in `scripts/promote.py`. See `docs/promote-shortcut-setup.md`
+for full documentation.
 
 ## Offline session summarizing and memory extraction
 
