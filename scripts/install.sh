@@ -80,6 +80,48 @@ $end_marker
   echo "  Run 'source ~/.bashrc' and 'source ~/.zshrc', or start a new shell."
 }
 
+scaffold_missing_configs() {
+  # Detect project config files that are missing but whose bundled
+  # *.example.yaml is present, and offer to copy them. Behaviour
+  # depends on $MODE:
+  #   auto      -> copy silently
+  #   dry-run   -> print what would be copied, no writes
+  #   interactive -> ask per file
+  # Idempotent: existing files are never touched.
+  local config_dir="$PROJECT_ROOT/scripts/config"
+  local real example
+
+  for real in install.yaml sync.yaml staging-categories.yaml; do
+    example="${real%.yaml}.example.yaml"
+    [[ -f "$config_dir/$real" ]] && continue
+    [[ -f "$config_dir/$example" ]] || continue
+
+    case "$MODE" in
+      auto)
+        if cp "$config_dir/$example" "$config_dir/$real"; then
+          echo "  copied: $real (from $example)"
+        else
+          echo "  error: failed to copy $example -> $real" >&2
+        fi
+        ;;
+      dry-run)
+        echo "  - $real (from $example)"
+        ;;
+      *)
+        echo "Missing project config: $config_dir/$real"
+        echo "  (a bundled $example is available with default values)"
+        select answer in "Copy example to $real" "Skip" "Quit"; do
+          case "$REPLY" in
+            1) cp "$config_dir/$example" "$config_dir/$real" && echo "  copied."; break ;;
+            2) echo "  skipped."; break ;;
+            3) echo "Aborted."; exit 0 ;;
+          esac
+        done
+        ;;
+    esac
+  done
+}
+
 # ---------------------------------------------------------------------------
 # Argument parsing
 # ---------------------------------------------------------------------------
@@ -190,6 +232,9 @@ if [[ "$MODE" == "dry-run" ]]; then
   done
   echo
   echo "Aliases would be added to ~/.bashrc / ~/.zshrc."
+  echo
+  echo "Project configs that would be scaffolded:"
+  scaffold_missing_configs
   exit 0
 fi
 
@@ -297,6 +342,11 @@ fi
 
 echo
 echo "=== Installing ==="
+
+# Project configs (scaffold any missing *.example.yaml → *.yaml).
+echo
+echo "=== Project configs ==="
+scaffold_missing_configs
 
 # Skills.
 if [[ ${#install_skills[@]} -gt 0 ]]; then
