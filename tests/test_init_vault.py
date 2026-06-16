@@ -41,6 +41,18 @@ def _resolved_vault(tmp_path: Path) -> Path:
 # --- root files --------------------------------------------------------------
 
 
+def test_creates_raw_directory(tmp_path):
+    """The 00Raw/ directory is the mirror target for project sources; it
+    must exist (and be empty) after init."""
+    vault = _resolved_vault(tmp_path)
+    result = run_init_vault(vault)
+    assert result.returncode == 0, result.stderr
+    raw = vault / "00Raw"
+    assert raw.is_dir(), f"missing {raw}/"
+    # Nothing in there by default — it's a drop zone, not a scaffold.
+    assert list(raw.iterdir()) == []
+
+
 def test_creates_root_files(tmp_path):
     vault = _resolved_vault(tmp_path)
     result = run_init_vault(vault)

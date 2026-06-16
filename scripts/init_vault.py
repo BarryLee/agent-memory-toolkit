@@ -31,6 +31,7 @@ if __package__ in (None, ""):
     from scripts._lib.paths import (
         CURATED,
         DEFAULT_STAGING_CATEGORIES_CONFIG,
+        RAW,
         STAGING,
         STAGING_ROOT_FILES,
         VAULT_TEMPLATES_DIR,
@@ -45,6 +46,7 @@ else:
     from _lib.paths import (
         CURATED,
         DEFAULT_STAGING_CATEGORIES_CONFIG,
+        RAW,
         STAGING,
         STAGING_ROOT_FILES,
         VAULT_TEMPLATES_DIR,
@@ -165,6 +167,7 @@ def main() -> int:
 
     staging = args.vault_root / STAGING
     curated = args.vault_root / CURATED
+    raw = args.vault_root / RAW
 
     section(f"Vault:        {args.vault_root}")
     section(f"Categories:   {config_path} ({len(category_names)} categories)")
@@ -176,6 +179,11 @@ def main() -> int:
     )
 
     vault_tmpls = _load_vault_templates()
+
+    # 00Raw directory
+    section("Raw directory")
+    raw.mkdir(parents=True, exist_ok=True)
+    info(f"created {RAW}/")
 
     # Root files
     section("Staging root files")
