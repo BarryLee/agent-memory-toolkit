@@ -20,8 +20,10 @@ from pathlib import Path
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from scripts._lib.config import load_yaml
+    from scripts._lib.paths import die
 else:
     from _lib.config import load_yaml
+    from _lib.paths import die
 
 
 # Mapping from env var name -> config key. Any env var in this map, if
@@ -71,6 +73,24 @@ def _apply_env(cfg: dict) -> dict:
     return out
 
 
+def _require_config(cfg: dict, project_config: Path) -> None:
+    """Die if no config could be loaded from anywhere.
+
+    Order of precedence: project config, user config, env vars. If the
+    merged result is empty, neither the project config nor the user
+    config existed (or both were empty). Fail loud so the user copies
+    the bundled example instead of silently rendering empty values —
+    this matches the behaviour of `init_vault.py` and `sync_raw.py`.
+    """
+    if cfg:
+        return
+    die(
+        f"no config found (tried {project_config} and {USER_CONFIG}).\n"
+        f"Copy scripts/config/install.example.yaml to {project_config} "
+        f"(or to {USER_CONFIG}) and edit it."
+    )
+
+
 def _substitute(text: str, vars: dict[str, str]) -> tuple[str, list[str]]:
     """Replace ${VAR} with vars[VAR]. Returns (text, list of missing vars).
 
@@ -118,6 +138,7 @@ def main() -> int:
 
     cfg = _merge_configs(_load_config(args.config), _load_config(USER_CONFIG))
     cfg = _apply_env(cfg)
+    _require_config(cfg, args.config)
 
     print(f"Config: {args.config} + user overrides + env")
     for k, v in sorted(cfg.items()):

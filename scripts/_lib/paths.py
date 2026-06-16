@@ -30,8 +30,10 @@ TEMPLATES_DIR = Path(__file__).resolve().parent.parent / "config" / "templates"
 VAULT_TEMPLATES_DIR = TEMPLATES_DIR / "vault"
 BANK_TEMPLATES_DIR = TEMPLATES_DIR / "bank"
 
-# Hard-coded fallback used only if the YAML config is missing or malformed.
-# Keep this in sync with scripts/config/staging-categories.example.yaml.
+# Reserved for future use if we ever want a hard-coded fallback (none
+# today — `init_vault.py` fails loud and points at the bundled
+# example). Empty by design so the import doesn't break; do not rely
+# on it as a real fallback.
 DEFAULT_STAGING_CATEGORIES: dict[str, str] = {}
 
 # Files that live at staging/curated root (not under a category).

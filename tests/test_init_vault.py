@@ -193,3 +193,23 @@ def test_force_never_overwrites_index_md(tmp_path):
     r2 = run_init_vault(vault, "--force")
     assert r2.returncode == 0, r2.stderr
     assert idx.read_text() == "# tampered index\n"
+
+
+# --- missing-config error behaviour -----------------------------------------
+
+
+def test_dies_when_categories_config_missing(tmp_path):
+    """When the categories config doesn't exist, the script must abort
+    with a non-zero exit and a message that points at the bundled
+    example — not silently fall back. This matches the behaviour of
+    `sync_raw.py` and `render.py`.
+    """
+    vault = _resolved_vault(tmp_path)
+    bogus = tmp_path / "no-such-categories.yaml"
+    assert not bogus.exists()
+    result = run_init_vault(vault, "--categories-config", str(bogus))
+    assert result.returncode != 0, result.stdout
+    assert "no-such-categories.yaml" in result.stderr
+    assert "staging-categories.example.yaml" in result.stderr
+    # Nothing in the vault should have been created.
+    assert not (vault / "10Staging").exists()

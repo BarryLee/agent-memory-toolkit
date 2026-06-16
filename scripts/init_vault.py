@@ -15,9 +15,12 @@ can re-run it after pulling changes that added a new category. Use
 `--force` to overwrite `_guides.md` and the root files (but never
 `index.md` — that one is hand-maintained).
 
-If the categories config is missing entirely, the script offers to copy
-the bundled `staging-categories.example.yaml` to `staging-categories.yaml`
-so the user has a starting point.
+If the categories config is missing, the script aborts with a message
+telling you to copy `staging-categories.example.yaml` to
+`staging-categories.yaml` and edit it. There is no silent fallback —
+all three config-driven scripts (`init_vault.py`, `sync_raw.py`,
+`render.py`) fail loud and point at the bundled example, so the fix is
+always the same: copy the example, edit, re-run.
 """
 from __future__ import annotations
 
@@ -67,30 +70,21 @@ def _resolve_categories_config(
 ) -> tuple[Path, dict[str, str]]:
     """Return (resolved_config_path, {category_name: guide_body}).
 
-    Falls back to the bundled example if neither the requested config nor
-    the default exists. Errors if a config is requested explicitly but
-    missing.
+    Errors if the config is missing — there is no example fallback.
+    Copy `staging-categories.example.yaml` to the desired location
+    and edit it before re-running. This matches the fail-loud
+    behaviour of `sync_raw.py` and `render.py`.
     """
-    candidate = config_path
-    if not candidate.exists():
-        # Default wasn't created yet — fall back to the example so the
-        # user can initialize a fresh vault with one command.
-        if config_path == DEFAULT_STAGING_CATEGORIES_CONFIG and EXAMPLE_PATH.exists():
-            info(
-                f"no {config_path.name} yet — using bundled {EXAMPLE_PATH.name}. "
-                f"Copy it to {config_path.name} to customize."
-            )
-            candidate = EXAMPLE_PATH
-        else:
-            die(
-                f"categories config not found: {config_path}\n"
-                f"Copy {EXAMPLE_PATH} to {config_path} and edit it."
-            )
+    if not config_path.exists():
+        die(
+            f"categories config not found: {config_path}\n"
+            f"Copy {EXAMPLE_PATH} to {config_path} and edit it."
+        )
 
-    raw = load_yaml(candidate)
+    raw = load_yaml(config_path)
     if not isinstance(raw, dict) or not raw:
         die(
-            f"categories config {candidate} must be a non-empty mapping of "
+            f"categories config {config_path} must be a non-empty mapping of "
             f"category-name -> guide-body. Got: {type(raw).__name__}"
         )
 
@@ -105,7 +99,7 @@ def _resolve_categories_config(
         if not isinstance(v, str):
             die(f"category {k!r} body must be a string, got {type(v).__name__}")
         out[k] = v
-    return candidate, out
+    return config_path, out
 
 
 def _load_vault_templates() -> dict[str, str]:
@@ -148,7 +142,8 @@ def main() -> int:
         default=DEFAULT_STAGING_CATEGORIES_CONFIG,
         help=(
             "YAML mapping of category name -> _guides.md body. "
-            "Falls back to the bundled example if missing. "
+            "Must exist — copy staging-categories.example.yaml to a "
+            "real path before running. "
             f"(default: {DEFAULT_STAGING_CATEGORIES_CONFIG})"
         ),
     )
