@@ -19,7 +19,6 @@ The script is a dry run by default — pass `--apply` to actually write.
 from __future__ import annotations
 
 import argparse
-import fnmatch
 import os
 import subprocess
 import sys
@@ -29,6 +28,7 @@ from typing import Iterable
 if __package__ in (None, ""):
     sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
     from scripts._lib.config import load_yaml
+    from scripts._lib.glob import matches_any as _matches
     from scripts._lib.paths import (
         RAW,
         SKIP_NAMES,
@@ -39,6 +39,7 @@ if __package__ in (None, ""):
     )
 else:
     from _lib.config import load_yaml
+    from _lib.glob import matches_any as _matches
     from _lib.paths import (
         RAW,
         SKIP_NAMES,
@@ -81,11 +82,6 @@ def _validate_target(target: str) -> Path:
     return Path(target)
 
 
-def _matches(path_str: str, patterns: list[str]) -> bool:
-    """fnmatch with the convention that patterns are slash-aware (lowercased)."""
-    return any(fnmatch.fnmatch(path_str, p) for p in patterns)
-
-
 def _list_files(
     source: Path,
     include: list[str] | None,
@@ -95,6 +91,10 @@ def _list_files(
 
     `include=None` means "any *.md file". Hard excludes are always applied
     in addition to user `exclude` patterns.
+
+    Pattern matching is delegated to `_lib/glob.py`, which implements
+    gitignore-style component-aware semantics (`*` does not cross `/`,
+    `**` matches zero or more components). See that module's docstring.
     """
     out: list[Path] = []
     for path in sorted(source.rglob("*.md")):
@@ -203,39 +203,66 @@ def sync_one(
     expected_rels = set(rels)
     info(f"[{target}] {len(rels)} files match")
 
+    # Initialise the counts up-front so the empty-rels branch below
+    # doesn't trip an UnboundLocalError on return. (rsync's per-file
+    # log loop, when entered, may increment these.)
+    transferred = 0
+    no_op = 0
+
     if rels:
+        # Make sure the dest dir exists so rsync can write into it on
+        # the first run. Idempotent and cheap; needed because the
+        # `--files-from` mode doesn't auto-create parents.
+        dest_root.mkdir(parents=True, exist_ok=True)
+
         result = _run_rsync(source, dest_root, rels, apply, delete)
         if result.returncode != 0:
             stderr = result.stderr.decode(errors="replace").strip()
             die(f"rsync failed for {target}:\n{stderr}")
-        # In dry-run + itemize mode, rsync prints lines like
-        # `>f++++++ README.md` or `.f........ README.md` etc. We count
-        # actual transfers vs no-ops.
-        transferred = 0
-        no_op = 0
+        # In itemize mode, rsync prints lines like
+        #   `>f++++++ README.md`        (file would be / is being sent)
+        #   `.f........ README.md`      (no change — canonical rsync only)
+        #   `*deleting   extra.md`     (with --delete)
+        #   `cd+++++++ sub/`            (intermediate dir)
+        # The itemize code is action + type + attribute flags. The
+        # exact width depends on the rsync implementation (openrsync
+        # on macOS uses 9 chars; canonical samba rsync uses 11), so
+        # we split on the first space rather than slicing. Also,
+        # openrsync is silent on identical files (no `.f` line at
+        # all), so we derive the no-op count as `total - transferred`
+        # for an implementation-independent answer.
+        verb = "would create" if not apply else "creating"
         for line in result.stdout.decode(errors="replace").splitlines():
             if not line:
                 continue
-            # Itemize code is 11 chars; 1st char is the action
-            # (`>`=send, `<`=recv, `c`=local, `.`=no-op, `*`=delete),
-            # 2nd char is the type (`f`=file, `d`=dir, etc.). We count
-            # files only — directories come along for the ride.
-            code = line[:11] if len(line) >= 11 else line
+            parts = line.split(None, 1)
+            if len(parts) < 2:
+                continue
+            code, src_rel_str = parts[0], parts[1]
             if code.startswith("*deleting"):
                 continue
             if len(code) < 2:
                 continue
-            if code[0] in (">", "<", "c"):
+            if code[0] == ">" and code[1] == "f":
                 transferred += 1
-            elif code[0] == ".":
-                no_op += 1
+                if not src_rel_str:
+                    continue
+                dest_path = dest_root / src_rel_str
+                try:
+                    dest_rel = dest_path.relative_to(vault_root_path)
+                except ValueError:
+                    # Defensive: dest_root is built from vault_root_path,
+                    # so this shouldn't happen, but if it ever does we
+                    # fall back to the dest_root-relative path.
+                    dest_rel = dest_path.relative_to(dest_root)
+                info(f"[{target}] {verb}: {dest_rel}")
+        no_op = len(rels) - transferred
         info(
             f"[{target}] "
             f"{'planned transfers' if not apply else 'transfers'}: {transferred}, "
             f"no-op entries: {no_op}"
         )
     else:
-        copied = updated = unchanged = 0
         info(f"[{target}] nothing to transfer")
 
     removed_count = 0

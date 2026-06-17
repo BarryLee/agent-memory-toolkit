@@ -22,9 +22,12 @@
 #                 destination that no longer match the include/exclude
 #                 rules are removed.
 #
-# Glob syntax: standard fnmatch — `*` matches a single path component,
-# `**` matches across slashes. Patterns are matched against the file
-# path relative to `source`.
+# Glob syntax: gitignore-style component-aware globs. `*` matches a
+# single path component (it does NOT cross `/`); `**` matches zero or
+# more components. `?` and `[abc]` work within a single component.
+# Patterns are case-sensitive and anchored at both ends (the whole
+# path must match the whole pattern). Patterns are matched against
+# the file path relative to `source`.
 
 vault_root: ~/Documents/agentstuffs
 
