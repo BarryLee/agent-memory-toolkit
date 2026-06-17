@@ -5,6 +5,16 @@ and inspect the files it produces. The vault path is `.resolve()`-d
 before being handed to the script to side-step macOS's `/tmp` ->
 `/private/tmp` symlink, which would otherwise break the
 `path.relative_to(...)` calls inside the script's `info()` output.
+
+The tests depend on the bundled `staging-categories.example.yaml`,
+NOT the user-edited `staging-categories.yaml` (which is gitignored
+and may be customised). Using the example makes the suite
+deterministic: it always tests the canonical "what a fresh install
+produces" behaviour, regardless of what's in the user's local config.
+The `run_init_vault` helper passes `--categories-config` pointing at
+the example; any test that needs a different config (e.g. the
+missing-config error test) passes its own `--categories-config`,
+which argparse picks up as the last value.
 """
 from __future__ import annotations
 
@@ -16,11 +26,22 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = REPO_ROOT / "scripts" / "init_vault.py"
+# Always test against the committed example, not the gitignored local
+# user copy. See module docstring.
+EXAMPLE_CONFIG = REPO_ROOT / "scripts" / "config" / "staging-categories.example.yaml"
 
 
 def run_init_vault(vault_root: Path, *extra: str) -> subprocess.CompletedProcess:
     return subprocess.run(
-        [sys.executable, str(SCRIPT), "--vault-root", str(vault_root), *extra],
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--vault-root",
+            str(vault_root),
+            "--categories-config",
+            str(EXAMPLE_CONFIG),
+            *extra,
+        ],
         check=False,
         capture_output=True,
         text=True,
@@ -113,21 +134,34 @@ def test_creates_all_bundled_categories(tmp_path):
         assert (staging / cat / "index.md").is_file(), f"missing {cat}/index.md"
 
 
-def test_guides_md_content_matches_categories_config(tmp_path):
-    """Each category's `_guides.md` body comes from staging-categories.yaml.
+@pytest.mark.parametrize("category", [
+    "Projects",
+    "Learnings",
+    "Patterns",
+    "Rules",
+    "TODO",
+    "People",
+    "Events",
+])
+def test_guides_md_content_matches_categories_config(tmp_path, category):
+    """Each category's `_guides.md` body comes from the categories config
+    and must start with YAML frontmatter carrying a `description:` field,
+    followed by the standard `# <Category> — guide` header.
 
-    The body starts with YAML frontmatter (--- description: ... ---), then
-    the guide header.
+    The frontmatter is what agents `grep` for a one-line summary before
+    deciding whether to read the full guide (see
+    skills/update-memory-vault/SKILL.md). The test runs against the
+    bundled example file (via `run_init_vault`'s default
+    `--categories-config`), so it locks in the convention that the
+    example itself follows.
     """
     vault = _resolved_vault(tmp_path)
     result = run_init_vault(vault)
     assert result.returncode == 0, result.stderr
-    projects_guide = (vault / "10Staging" / "Projects" / "_guides.md").read_text()
-    # The bundled example starts with frontmatter, then the guide header.
-    assert projects_guide.startswith("---")
-    assert "# Projects — guide" in projects_guide
-    # Frontmatter must include a description field.
-    assert "description:" in projects_guide
+    guide = (vault / "10Staging" / category / "_guides.md").read_text()
+    assert guide.startswith("---"), f"{category}: missing YAML frontmatter"
+    assert "description:" in guide, f"{category}: frontmatter lacks `description:`"
+    assert f"# {category} — guide" in guide, f"{category}: missing guide header"
 
 
 # --- curated root ------------------------------------------------------------

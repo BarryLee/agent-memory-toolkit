@@ -5,7 +5,14 @@
 # value is the full body of that category's _guides.md (use a `|-` block
 # scalar for multi-line text).
 #
-# Each category's _guides.md should follow this structure:
+# Each category's _guides.md body MUST start with a YAML frontmatter
+# block carrying a `description:` field. Agents peek this one-liner with
+# grep before deciding whether to read the full guide (see
+# skills/update-memory-vault/SKILL.md). The structure is:
+#
+#   ---
+#   description: <one-line summary — what it is, when to peek vs read full>
+#   ---
 #
 #   # <Category> — guide
 #   <one-paragraph purpose>
@@ -30,6 +37,10 @@
 # init script does not delete data.
 
 Projects: |-
+  ---
+  description: One-file-per-project summaries (~5-15 lines) plus wikilinks to the project's memory bank. Peek to see which projects exist; read the full guide before writing a new project note.
+  ---
+
   # Projects — guide
 
   **One file per project.** Each file is a short summary (~5-15 lines)
@@ -91,6 +102,10 @@ Projects: |-
   one-sentence summary.
 
 Learnings: |-
+  ---
+  description: Knowledge the agent has acquired — detailed, specific, often with examples and links. Peek to check if a topic has already been researched before redoing the work; read the full guide before writing a new learning.
+  ---
+
   # Learnings — guide
 
   Knowledge the agent has acquired — typically from research,
@@ -143,6 +158,10 @@ Learnings: |-
   one-sentence summary.
 
 Patterns: |-
+  ---
+  description: Battle-tested techniques — recipes, snippets, and approaches the agent has found to work. Peek to find an existing recipe before inventing one; read the full guide before writing a new pattern.
+  ---
+
   # Patterns — guide
 
   Battle-tested *techniques* — recipes, cheatsheets, snippets, and
@@ -198,6 +217,10 @@ Patterns: |-
   one-sentence summary.
 
 Rules: |-
+  ---
+  description: Rules the user has explicitly stated the agent should follow — overrides agent defaults. Peek to check for an existing rule before improvising; read the full guide before writing a new rule.
+  ---
+
   # Rules — guide
 
   Rules the user has **explicitly stated** the agent should follow.
@@ -248,6 +271,10 @@ Rules: |-
   one-sentence summary.
 
 TODO: |-
+  ---
+  description: Cross-project TODOs that don't belong to any single project. Peek to see what's on the user's plate; read the full guide before writing a new task.
+  ---
+
   # TODO — guide
 
   Cross-project TODOs. The criteria for inclusion is *cross-project
@@ -294,6 +321,10 @@ TODO: |-
   one-sentence summary.
 
 People: |-
+  ---
+  description: Per-person working notes — role, contact, what they care about, recent interactions. Peek to recall context on someone before bringing them up; read the full guide before adding a new person.
+  ---
+
   # People — guide
 
   People who have come up in sessions. Each file is a small dossier
@@ -338,6 +369,10 @@ People: |-
   one-sentence summary.
 
 Events: |-
+  ---
+  description: Recaps of meetings, conferences, deadlines, and notable sessions. Peek to recall what was decided or what's still open; read the full guide before writing a new event note.
+  ---
+
   # Events — guide
 
   Events, meetings, conferences, deadlines, or notable sessions
