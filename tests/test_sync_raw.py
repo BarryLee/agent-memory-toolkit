@@ -96,15 +96,39 @@ def test_empty_rels_with_hard_excludes_only(tmp_path):
     vault = _resolved(tmp_path / "vault")
     config = tmp_path / "sync.yaml"
 
-    # Only non-md content; hard-excluded dirs only.
+    # Only content inside hard-excluded dirs.
     (source / "node_modules").mkdir()
     (source / "node_modules" / "x.md").write_text("# skip")
-    (source / "README.txt").write_text("not markdown")
+    (source / "node_modules" / "README.txt").write_text("not markdown")
 
     _write_config(config, vault, source, target="x")
     result = run_sync(config, vault)
     assert result.returncode == 0, result.stderr
     assert "0 files match" in result.stdout
+
+
+# ---------------------------------------------------------------------------
+# Default scope: include=None matches every file type, not just .md
+# ---------------------------------------------------------------------------
+
+
+def test_no_include_matches_non_markdown_files(tmp_path):
+    """Without `include`, the script considers every file under `source`
+    (any extension), not just .md. Use `include` explicitly to limit."""
+    source = _resolved(tmp_path / "src")
+    vault = _resolved(tmp_path / "vault")
+    config = tmp_path / "sync.yaml"
+
+    (source / "notes.md").write_text("# md")
+    (source / "image.png").write_text("fake png")
+    (source / "data.json").write_text("{}")
+
+    _write_config(config, vault, source, target="t")
+    result = run_sync(config, vault, "--apply")
+    assert result.returncode == 0, result.stderr
+    assert (vault / "00Raw" / "t" / "notes.md").is_file()
+    assert (vault / "00Raw" / "t" / "image.png").is_file()
+    assert (vault / "00Raw" / "t" / "data.json").is_file()
 
 
 # ---------------------------------------------------------------------------

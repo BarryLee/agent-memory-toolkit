@@ -13,12 +13,15 @@
 #                 directory tree is recreated under <vault>/00Raw/<target>/.
 #     - include:  optional list of glob patterns (relative to `source`).
 #                 Only files matching at least one pattern are copied.
-#                 If omitted, every .md file under `source` is considered.
+#                 If omitted, every file under `source` is considered
+#                 (any extension; subject to hard excludes). Use this
+#                 to limit by type — e.g. `["**/*.md"]` for markdown
+#                 only, or `["**/*.md", "**/*.png"]` for md + images.
 #     - exclude:  optional list of glob patterns. Files matching any
 #                 pattern are skipped. Hard excludes (.obsidian, .git,
 #                 .DS_Store, node_modules, __pycache__, venv, build,
 #                 dist, .next, .turbo) are always applied.
-#     - delete:   optional bool (default false). If true, .md files in the
+#     - delete:   optional bool (default false). If true, files in the
 #                 destination that no longer match the include/exclude
 #                 rules are removed.
 #
@@ -42,6 +45,6 @@ syncs:
 
   - source: ~/code/example-app
     target: code/example-app
-    # No `include` means: copy every .md file under `source`.
+    # No `include` means: copy every file under `source`.
     exclude:
       - "**/CHANGELOG.md"

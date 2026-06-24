@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Mirror markdown files from project trees into 00Raw/.
+"""Mirror files from project trees into 00Raw/.
 
 Each `syncs` entry in the config declares a `source` directory and a
 `target` path *relative* to `<vault>/00Raw/`. Files under `source` that
@@ -90,15 +90,18 @@ def _list_files(
 ) -> list[Path]:
     """Return the files (relative to `source`) that pass the filter rules.
 
-    `include=None` means "any *.md file". Hard excludes are always applied
-    in addition to user `exclude` patterns.
+    `include=None` means "every file under `source`" (any extension).
+    Use `include` to limit by extension, name, or path pattern — e.g.
+    `["**/*.md"]` for markdown-only or `["**/*.md", "**/*.png"]` for
+    markdown plus images. Hard excludes are always applied in addition
+    to user `exclude` patterns.
 
     Pattern matching is delegated to `_lib/glob.py`, which implements
     gitignore-style component-aware semantics (`*` does not cross `/`,
     `**` matches zero or more components). See that module's docstring.
     """
     out: list[Path] = []
-    for path in sorted(source.rglob("*.md")):
+    for path in sorted(source.rglob("*")):
         if not path.is_file():
             continue
         rel = path.relative_to(source)
@@ -123,15 +126,19 @@ def _prune(
     expected_rels: set[Path],
     apply: bool,
 ) -> list[Path]:
-    """Delete .md files in dest_root that aren't in expected_rels.
+    """Delete files in dest_root that aren't in expected_rels.
 
     Returns the list (in either form: removed or plan-removed). Only
-    touches files; never removes empty directories.
+    touches files; never removes empty directories. Walks every file
+    type so that non-markdown files (when synced) are also pruned on
+    a `--delete` run.
     """
     if not dest_root.exists():
         return []
     removed: list[Path] = []
-    for path in sorted(dest_root.rglob("*.md")):
+    for path in sorted(dest_root.rglob("*")):
+        if not path.is_file():
+            continue
         rel = path.relative_to(dest_root)
         if rel not in expected_rels:
             removed.append(path)
