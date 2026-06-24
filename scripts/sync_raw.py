@@ -61,6 +61,7 @@ HARD_EXCLUDES = [
     ".DS_Store",
     "node_modules",
     "__pycache__",
+    ".pytest_cache",
     ".venv",
     "venv",
     "build",
