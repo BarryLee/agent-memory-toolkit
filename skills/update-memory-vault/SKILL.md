@@ -89,6 +89,10 @@ File-level rules that apply on top of the category template:
   discoverable through tags and links is far more useful than one
   that relies solely on search.
 
+- **Cite your sources** when the note is derived from specific
+  source file(s) you read this session: add a `## Sources` section
+  with one markdown link per source.
+
 ## Step 4 — maintain active context
 
 After writing, ask: does `${VAULT_ROOT}/10Staging/ActiveContext.md`
