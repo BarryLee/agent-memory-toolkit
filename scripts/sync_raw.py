@@ -99,21 +99,39 @@ def _list_files(
     Pattern matching is delegated to `_lib/glob.py`, which implements
     gitignore-style component-aware semantics (`*` does not cross `/`,
     `**` matches zero or more components). See that module's docstring.
+
+    We use `os.walk` and prune skip-named directories in place rather
+    than the simpler `Path.rglob('*')` so that trees with very large
+    `node_modules` / `.git` / `.venv` subtrees don't pay the stat cost
+    of enumerating every file in them. Behavior is otherwise equivalent
+    to a rglob + segment-filter pass.
     """
+    skip_set = SKIP_NAMES | set(HARD_EXCLUDES)
     out: list[Path] = []
-    for path in sorted(source.rglob("*")):
-        if not path.is_file():
-            continue
-        rel = path.relative_to(source)
-        rel_str = str(rel)
-        # Hard exclude on any path segment.
-        if any(part in SKIP_NAMES or part in HARD_EXCLUDES for part in rel.parts):
-            continue
-        if include is not None and not _matches(rel_str, include):
-            continue
-        if exclude is not None and _matches(rel_str, exclude):
-            continue
-        out.append(rel)
+    for dirpath, dirnames, filenames in os.walk(source):
+        # Prune skip-named directories in place: os.walk respects
+        # mutations to `dirnames` and won't descend into removed
+        # entries. Sorting keeps the traversal order deterministic.
+        dirnames[:] = sorted(d for d in dirnames if d not in skip_set)
+        for name in sorted(filenames):
+            path = Path(dirpath) / name
+            if not path.is_file():
+                # Defensive: skip symlinks-to-directory, fifos, etc.
+                # `rglob` skipped these too via `is_file()`.
+                continue
+            rel = path.relative_to(source)
+            # Per-file safety net: catch the synthetic case where a
+            # file's leaf or middle segment matches a skip name (e.g.
+            # a file literally named `node_modules.md`). In normal
+            # trees pruning already covers this.
+            if any(part in skip_set for part in rel.parts):
+                continue
+            if include is not None and not _matches(str(rel), include):
+                continue
+            if exclude is not None and _matches(str(rel), exclude):
+                continue
+            out.append(rel)
+    out.sort()
     return out
 
 

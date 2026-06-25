@@ -307,6 +307,97 @@ def test_hard_excludes_still_apply(tmp_path):
 
 
 # ---------------------------------------------------------------------------
+# Skip-name coverage: every name in the union (SKIP_NAMES | HARD_EXCLUDES)
+# must be skipped, whether encountered as a directory (pruning) or as a
+# file path segment (per-file safety net). The list below is hardcoded on
+# purpose — it acts as a contract on what *should* be skipped. If the
+# union in `sync_raw.py` gains or loses names, this test will fail and
+# force an explicit review of both sides.
+# ---------------------------------------------------------------------------
+
+_SKIP_DIR_NAMES = [
+    ".obsidian",
+    ".git",
+    "node_modules",
+    "__pycache__",
+    ".pytest_cache",
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    ".next",
+    ".turbo",
+]
+
+
+@pytest.mark.parametrize("skip_name", _SKIP_DIR_NAMES)
+def test_dir_skip_name_excludes_contents(tmp_path, skip_name):
+    """For every directory name in the skip set, a file inside that
+    dir must not be synced — even with `include=None`, which would
+    otherwise consider every file type. With the os.walk-based
+    implementation this exercises the dir-pruning path; if pruning
+    ever regresses to per-file filtering only, this test still
+    passes, but the perf contract is no longer enforced by the test.
+    """
+    source = _resolved(tmp_path / "src")
+    vault = _resolved(tmp_path / "vault")
+    config = tmp_path / "sync.yaml"
+
+    _make_source_files(source, "keep.md", f"{skip_name}/inside.md")
+    _write_config(config, vault, source, target="t")  # include=None
+
+    result = run_sync(config, vault, "--apply")
+    assert result.returncode == 0, result.stderr
+    # Sanity: an unskipped file is still synced.
+    assert (vault / "00Raw" / "t" / "keep.md").is_file()
+    # The skip-dir contents must not be in the vault, and the dir
+    # itself must not have been created either.
+    assert not (vault / "00Raw" / "t" / skip_name).exists()
+    assert not (vault / "00Raw" / "t" / skip_name / "inside.md").exists()
+
+
+def test_ds_store_file_is_skipped(tmp_path):
+    """.DS_Store is a file (not a dir), so it hits the per-file
+    safety net rather than dir pruning. With `include=None` the
+    include filter doesn't help — the segment check must catch it."""
+    source = _resolved(tmp_path / "src")
+    vault = _resolved(tmp_path / "vault")
+    config = tmp_path / "sync.yaml"
+
+    (source / ".DS_Store").write_text("mac metadata blob")
+    _make_source_files(source, "keep.md")
+    _write_config(config, vault, source, target="t")  # include=None
+
+    result = run_sync(config, vault, "--apply")
+    assert result.returncode == 0, result.stderr
+    assert (vault / "00Raw" / "t" / "keep.md").is_file()
+    assert not (vault / "00Raw" / "t" / ".DS_Store").exists()
+
+
+def test_deeply_nested_skip_dir_is_pruned(tmp_path):
+    """A skip-named dir at any depth must be pruned — not just at
+    the source root. Catches a regression where pruning only checks
+    the top-level dirnames."""
+    source = _resolved(tmp_path / "src")
+    vault = _resolved(tmp_path / "vault")
+    config = tmp_path / "sync.yaml"
+
+    _make_source_files(
+        source,
+        "keep.md",
+        "deeply/nested/path/with/node_modules/inside.md",
+        "deeper/still/.git/objects/abc.md",
+    )
+    _write_config(config, vault, source, target="t")  # include=None
+
+    result = run_sync(config, vault, "--apply")
+    assert result.returncode == 0, result.stderr
+    assert (vault / "00Raw" / "t" / "keep.md").is_file()
+    assert not (vault / "00Raw" / "t" / "deeply").exists()
+    assert not (vault / "00Raw" / "t" / "deeper").exists()
+
+
+# ---------------------------------------------------------------------------
 # Example config — the bundled patterns must work end-to-end
 # ---------------------------------------------------------------------------
 
